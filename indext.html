@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IND Slither Elite (No Ads)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rajdhani:wght@500;700&display=swap');
+
+        :root { --primary: #00d2d3; --accent: #ff6b6b; --bg: #101215; }
+        
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: var(--bg);
+            font-family: 'Rajdhani', sans-serif;
+            user-select: none; -webkit-user-select: none; touch-action: none;
+        }
+
+        canvas { display: block; position: absolute; top: 0; left: 0; }
+        #gameCanvas { z-index: 1; }
+        
+        /* UI LAYER */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* YOUTUBE ICON (NEW) */
+        #yt-icon {
+            position: absolute; top: 20px; left: 20px;
+            width: 60px; height: 40px;
+            cursor: pointer; pointer-events: auto;
+            background: rgba(0,0,0,0.5); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+        #yt-icon:hover { transform: scale(1.1); background: rgba(255,0,0,0.2); border-color: #ff0000; }
+        #yt-icon svg { width: 30px; height: 30px; fill: #fff; transition: 0.2s; }
+        #yt-icon:hover svg { fill: #ff0000; }
+
+        /* SCREENS & ANIMATIONS */
+        .screen {
+            position: absolute; width: 100%; height: 100%;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(16, 18, 21, 0.90); backdrop-filter: blur(8px);
+            pointer-events: auto; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .screen.active { display: flex; opacity: 1; }
+
+        .logo {
+            font-family: 'Fredoka One', cursive; font-size: 90px; color: #fff;
+            text-shadow: 0 0 20px var(--primary); margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        .logo span { color: var(--primary); }
+
+        .menu-box { 
+            width: 340px; display: flex; flex-direction: column; gap: 15px; 
+            background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        input {
+            background: rgba(0,0,0,0.5); border: 2px solid #333;
+            padding: 15px; border-radius: 12px;
+            color: #fff; font-family: inherit; font-size: 20px; text-align: center;
+            outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 210, 211, 0.3); }
+
+        /* NEON BUTTONS */
+        .btn {
+            border: none; border-radius: 12px; padding: 15px;
+            font-family: 'Fredoka One', cursive; font-size: 22px;
+            color: white; cursor: pointer; position: relative; overflow: hidden;
+            transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { transform: scale(1.02); filter: brightness(1.2); }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-play { background: linear-gradient(45deg, #00d2d3, #2ecc71); box-shadow: 0 5px 20px rgba(46, 204, 113, 0.4); }
+        .btn-shop { background: linear-gradient(45deg, #feca57, #ff9f43); color: #222; }
+        .btn-mode { background: linear-gradient(45deg, #54a0ff, #2e86de); margin-bottom: 5px; }
+        .btn-coffee { background: linear-gradient(45deg, #6f4e37, #a0522d); margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px;}
+        .btn-back { background: #576574; font-size: 16px; width: 50%; align-self: center; }
+
+        /* HUD ELEMENTS */
+        #hud { display: none; width: 100%; height: 100%; pointer-events: none; }
+        
+        .score-box {
+            position: absolute; bottom: 20px; left: 20px;
+            font-size: 24px; color: #fff; font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #minimap-container {
+            position: absolute; bottom: 20px; right: 20px;
+            width: 150px; height: 150px;
+            background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 100%; overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #minimap { width: 100%; height: 100%; display: block; }
+
+        #leaderboard {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px;
+            color: #fff; font-size: 14px; width: 180px;
+        }
+        .lb-row { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:2px;}
+        
+        #mobile-controls {
+            display: none; position: absolute; bottom: 40px; right: 200px;
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            pointer-events: auto; justify-content: center; align-items: center;
+            font-size: 30px; color: #fff; backdrop-filter: blur(4px);
+        }
+
+        /* SHOP & MISC */
+        .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 250px; overflow-y: auto; }
+        .shop-item { 
+            background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; 
+            text-align: center; cursor: pointer; border: 2px solid transparent; 
+            font-size: 24px; transition: 0.2s;
+        }
+        .shop-item:hover, .shop-item.selected { border-color: var(--primary); background: rgba(0, 210, 211, 0.1); transform: translateY(-2px);}
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui-layer">
+    
+    <!-- YOUTUBE ICON -->
+    <div id="yt-icon" onclick="App.openYoutube()" title="Visit Channel">
+        <svg viewBox="0 0 24 24">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+        </svg>
+    </div>
+
+    <div id="screen-menu" class="screen active">
+        <div class="logo">IND<span>.IO</span></div>
+        <div class="menu-box">
+            <input type="text" id="nickname" placeholder="Enter Nickname" maxlength="12">
+            <!-- Directly go to modes, no ads -->
+            <button class="btn btn-play" onclick="App.startFlow()">Play Now</button>
+            <button class="btn btn-shop" onclick="Screens.show('shop')">Skin Shop</button>
+        </div>
+    </div>
+
+    <div id="screen-modes" class="screen">
+        <div class="logo" style="font-size: 50px;">Select <span>Mode</span></div>
+        <div class="menu-box">
+            <button class="btn btn-mode" onclick="Game.init('FREEPLAY')">Freeplay (∞)</button>
+            <button class="btn btn-mode" onclick="Game.init('1V1')">Duel 1v1</button>
+            <button class="btn btn-mode" style="background: linear-gradient(45deg, #ff4757, #ff6b6b);" onclick="Game.init('CHAOS')">Chaos Mode</button>
+            <button class="btn btn-back" onclick="Screens.show('menu')">Back</button>
+        </div>
+    </div>
+
+    <div id="screen-shop" class="screen">
+        <div class="logo" style="font-size: 40px;">Locker</div>
+        <div class="menu-box">
+            <div class="shop-grid" id="shop-list"></div>
+            <button class="btn btn-back" onclick="Screens.show('menu')">Back</button>
+        </div>
+    </div>
+
+    <div id="screen-over" class="screen">
+        <div class="logo" style="font-size: 60px; color: #ff6b6b;">WASTED</div>
+        <div style="font-size: 24px; color:#fff; margin-bottom: 20px;">
+            Length: <span id="final-score" style="color:var(--primary)">0</span>
+        </div>
+        <div class="menu-box">
+            <button class="btn btn-play" onclick="Game.restart()">Replay</button>
+            <button class="btn btn-back" onclick="Screens.show('menu')">Menu</button>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="score-box">Length: <span id="score-val">10</span></div>
+        <div id="leaderboard">
+            <div style="color:var(--primary); font-weight:bold; margin-bottom:10px;">LEADERBOARD</div>
+            <div id="lb-list"></div>
+        </div>
+        <div id="minimap-container"><canvas id="minimap"></canvas></div>
+        <div id="mobile-controls">⚡</div>
+    </div>
+</div>
+
+<script>
+/* =========================================
+   CONFIGURATION & DATA
+   ========================================= */
+const CONFIG = {
+    worldSize: 3000,
+    baseSpeed: 5,
+    boostSpeed: 10,
+    turnSpeed: 0.12,
+    colors: ['#00d2d3', '#ff9f43', '#5f27cd', '#ff6b6b', '#54a0ff', '#1dd1a1', '#f368e0'],
+    
+    // --- YOUTUBE CONFIG ---
+    youtubeLink: "https://youtube.com/@nextlegendyt?si=cCmMbmvrsoeGO3zW", // <--- RESTORED YOUR LINK
+
+    // --- UPI CONFIG ---
+    upiId: "8310417102@ybl",        // <--- RESTORED YOUR UPI ID
+    payeeName: "Game Developer"  
+};
+
+const SKINS = [
+    {id:'cyan', hex:'#00d2d3', icon:'🔵'},
+    {id:'red', hex:'#ff4757', icon:'🔴'},
+    {id:'gold', hex:'#ffd32a', icon:'🟡'},
+    {id:'purp', hex:'#706fd3', icon:'🟣'},
+    {id:'dark', hex:'#2f3542', icon:'⚫'},
+    {id:'usa', hex:'#333', type:'flag', icon:'🇺🇸'},
+    {id:'ind', hex:'#333', type:'flag', icon:'🇮🇳'},
+];
+
+const Store = {
+    get: () => JSON.parse(localStorage.getItem('neon_snake') || '{"skin":"cyan"}'),
+    set: (d) => localStorage.setItem('neon_snake', JSON.stringify(d))
+};
+
+/* =========================================
+   APP CONTROLLER (UI)
+   ========================================= */
+const App = {
+    startFlow: () => {
+        const nick = document.getElementById('nickname').value.trim();
+        if(!nick) return alert("Please enter a nickname!");
+        Screens.toMode(); // Skip ads, go straight to mode
+    },
+    
+    openYoutube: () => {
+        window.open(CONFIG.youtubeLink, '_blank');
+    },
+
+    openPayment: () => {
+        const url = `upi://pay?pa=${CONFIG.upiId}&pn=${encodeURIComponent(CONFIG.payeeName)}&cu=INR`;
+        window.location.href = url;
+    }
+};
+
+const Screens = {
+    show: (id) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-'+id).classList.add('active');
+        if(id === 'shop') RenderShop();
+    },
+    toMode: () => {
+        Screens.show('modes');
+    }
+};
+
+function RenderShop() {
+    const d = Store.get();
+    const list = document.getElementById('shop-list');
+    list.innerHTML = '';
+    SKINS.forEach(s => {
+        const div = document.createElement('div');
+        div.className = `shop-item ${d.skin === s.id ? 'selected' : ''}`;
+        div.innerText = s.icon;
+        div.style.borderBottom = `4px solid ${s.hex}`;
+        div.onclick = () => { 
+            const nd = Store.get(); nd.skin = s.id; Store.set(nd); RenderShop(); 
+        };
+        list.appendChild(div);
+    });
+}
+
+/* =========================================
+   GAME ENGINE
+   ========================================= */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+const mapCanvas = document.getElementById('minimap');
+const mapCtx = mapCanvas.getContext('2d');
+
+const Game = {
+    active: false,
+    mode: 'FREEPLAY',
+    snakes: [],
+    foods: [],
+    particles: [],
+    camera: { x:0, y:0, z:1 }, // z is zoom
+    player: null,
+    
+    init: (mode) => {
+        Game.mode = mode;
+        Game.active = true;
+        Game.snakes = [];
+        Game.foods = [];
+        Game.particles = [];
+        
+        // Hide UI, Show HUD
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('hud').style.display = 'block';
+        // Hide YT icon during gameplay
+        document.getElementById('yt-icon').style.display = 'none';
+
+        // Create Player
+        const nick = document.getElementById('nickname').value || "Hero";
+        const d = Store.get();
+        const skin = SKINS.find(s => s.id === d.skin) || SKINS[0];
+        Game.player = new Snake(nick, 0, 0, skin, false);
+        Game.snakes.push(Game.player);
+
+        // Create Bots
+        let botCount = mode === '1V1' ? 1 : 40;
+        if(mode === 'CHAOS') botCount = 80;
+        
+        for(let i=0; i<botCount; i++) Game.addBot();
+        for(let i=0; i<600; i++) Game.addFood();
+
+        Game.loop();
+    },
+
+    addBot: () => {
+        const x = (Math.random()-0.5) * CONFIG.worldSize;
+        const y = (Math.random()-0.5) * CONFIG.worldSize;
+        const skin = SKINS[Math.floor(Math.random()*SKINS.length)];
+        const names = ["Bot", "Pro", "Killer", "Snake", "Guest", "Noob"];
+        Game.snakes.push(new Snake(names[Math.floor(Math.random()*names.length)], x, y, skin, true));
+    },
+
+    addFood: (x, y, val=1) => {
+        Game.foods.push(new Food(x, y, val));
+    },
+
+    addParticle: (x, y, color) => {
+        if(Game.particles.length > 100) Game.particles.shift(); // Limit particles
+        Game.particles.push(new Particle(x, y, color));
+    },
+
+    restart: () => Game.init(Game.mode),
+
+    over: () => {
+        Game.active = false;
+        document.getElementById('final-score').innerText = Math.floor(Game.player.length);
+        document.getElementById('hud').style.display = 'none';
+        // Show YT icon again
+        document.getElementById('yt-icon').style.display = 'flex';
+        Screens.show('over');
+    },
+
+    loop: () => {
+        if(!Game.active) return;
+        requestAnimationFrame(Game.loop);
+        
+        // Update Logic
+        Game.snakes.forEach(s => s.update());
+        
+        // Collisions: Snake vs Snake
+        for(let s1 of Game.snakes) {
+            if(s1.dead) continue;
+            for(let s2 of Game.snakes) {
+                if(s1 === s2 || s2.dead) continue;
+                if(s1.checkCollision(s2)) {
+                    s1.die();
+                    // Explosion Effect
+                    for(let i=0; i<15; i++) Game.addParticle(s1.head.x, s1.head.y, s1.color);
+                }
+            }
+        }
+
+        // Collisions: Snake vs Food
+        Game.snakes.forEach(s => {
+            for(let i=Game.foods.length-1; i>=0; i--) {
+                let f = Game.foods[i];
+                if(Utils.dist(s.head.x, s.head.y, f.x, f.y) < s.width + f.size) {
+                    s.grow(f.val);
+                    Game.foods.splice(i, 1);
+                }
+            }
+        });
+
+        // Repopulate
+        if(Game.foods.length < 500) Game.addFood();
+        if(Game.snakes.filter(s=>!s.dead && s.isBot).length < (Game.mode === '1V1' ? 1 : 20)) {
+            if(Math.random() < 0.05) Game.addBot();
+        }
+
+        if(Game.player.dead) { Game.over(); return; }
+
+        // Render
+        Renderer.draw();
+        Renderer.drawMinimap();
+        
+        // HUD Updates
+        document.getElementById('score-val').innerText = Math.floor(Game.player.length);
+        Game.updateLeaderboard();
+    },
+
+    updateLeaderboard: () => {
+        const list = [...Game.snakes].sort((a,b) => b.length - a.length).slice(0,5);
+        document.getElementById('lb-list').innerHTML = list.map((s, i) => 
+            `<div class="lb-row" style="color:${s===Game.player?'var(--primary)':'#ccc'}">
+                <span>#${i+1} ${s.name}</span><span>${Math.floor(s.length)}</span>
+            </div>`
+        ).join('');
+    }
+};
+
+/* =========================================
+   ENTITIES
+   ========================================= */
+class Snake {
+    constructor(name, x, y, skin, isBot) {
+        this.name = name;
+        this.x = x; this.y = y;
+        this.skin = skin;
+        this.color = skin.hex;
+        this.isBot = isBot;
+        this.angle = Math.random() * Math.PI * 2;
+        this.targetAngle = this.angle;
+        this.speed = CONFIG.baseSpeed;
+        this.length = 10;
+        this.width = 15; // Radius
+        this.path = [];
+        this.dead = false;
+        
+        // Initialize body
+        for(let i=0; i<this.length*2; i++) this.path.push({x:x, y:y});
+        this.head = this.path[0];
+    }
+
+    update() {
+        if(this.dead) return;
+
+        // 1. Controls / AI
+        if(!this.isBot) {
+            // Mouse Follow
+            const dx = Mouse.x - canvas.width/2;
+            const dy = Mouse.y - canvas.height/2;
+            this.targetAngle = Math.atan2(dy, dx);
+            this.speed = Mouse.boost && this.length > 20 ? CONFIG.boostSpeed : CONFIG.baseSpeed;
+        } else {
+            this.aiLogic();
+        }
+
+        // --- FIX IS HERE: Prevent boost if length is too small ---
+        if(this.speed === CONFIG.boostSpeed) {
+            if (this.length > 5) { // Check length > 5
+                this.length -= 0.05; // Lose mass when boosting
+                if(Math.random() < 0.3) Game.addFood(this.path[this.path.length-1].x, this.path[this.path.length-1].y, 0.5);
+            } else {
+                this.speed = CONFIG.baseSpeed; // Stop boosting forcefully
+            }
+        }
+        // --------------------------------------------------------
+
+        // 2. Turn Smoothly
+        let diff = this.targetAngle - this.angle;
+        while(diff <= -Math.PI) diff += Math.PI*2;
+        while(diff > Math.PI) diff -= Math.PI*2;
+        this.angle += Math.max(-CONFIG.turnSpeed, Math.min(CONFIG.turnSpeed, diff));
+
+        // 3. Move
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+
+        // Wall Clamp
+        const limit = CONFIG.worldSize/2;
+        if(this.x < -limit || this.x > limit || this.y < -limit || this.y > limit) this.die();
+
+        // 4. Update Path (Body)
+        this.path.unshift({x:this.x, y:this.y});
+        // Snake width grows slightly with length
+        this.width = 10 + Math.sqrt(this.length); 
+        
+        // --- FIX IS HERE: Prevent invalid array length error ---
+        // Force minimum 2 to prevent crash when snake gets tiny
+        const wantedPoints = Math.max(2, Math.floor(this.length * 4)); 
+        if(this.path.length > wantedPoints) this.path.length = wantedPoints;
+        // -----------------------------------------------------
+        
+        this.head = this.path[0];
+    }
+
+    aiLogic() {
+        // Simple AI: Wander, Avoid collisions, Seek Food
+        if(Math.random() < 0.05) {
+            // Random wander
+            this.targetAngle += (Math.random()-0.5); 
+        }
+
+        // Avoidance
+        const lookAheadX = this.x + Math.cos(this.angle) * 100;
+        const lookAheadY = this.y + Math.sin(this.angle) * 100;
+        
+        // Check for nearby snakes
+        for(let other of Game.snakes) {
+            if(other === this || other.dead) continue;
+            // If another snake is close in front
+            if(Utils.dist(lookAheadX, lookAheadY, other.x, other.y) < other.width + 50) {
+                // Turn away hard
+                this.targetAngle += Math.PI/2; 
+                this.speed = CONFIG.boostSpeed;
+                return;
+            }
+        }
+
+        // Seek Food
+        let nearest = null;
+        let dist = 300; // Perception range
+        for(let f of Game.foods) {
+            const d = Utils.dist(this.x, this.y, f.x, f.y);
+            if(d < dist && f.val > 1) { // Prefer big food
+                dist = d; nearest = f;
+            }
+        }
+        if(nearest) {
+            this.targetAngle = Math.atan2(nearest.y - this.y, nearest.x - this.x);
+        }
+    }
+
+    checkCollision(other) {
+        // Check head against other snake's body
+        // Optimization: Step through body points
+        const step = Math.ceil(other.width / 2);
+        for(let i=0; i<other.path.length; i+=step) {
+            const p = other.path[i];
+            if(Utils.dist(this.head.x, this.head.y, p.x, p.y) < this.width + other.width - 5) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    die() {
+        this.dead = true;
+        // Turn body into food
+        const step = Math.max(1, Math.floor(this.width/3));
+        for(let i=0; i<this.path.length; i+=step) {
+            if(Math.random()>0.5) continue;
+            const p = this.path[i];
+            Game.addFood(p.x + (Math.random()-0.5)*20, p.y + (Math.random()-0.5)*20, 1 + this.width/10);
+        }
+    }
+    
+    // Growth logic
+    grow(val) { this.length += val * 0.3; }
+}
+
+class Food {
+    constructor(x, y, val) {
+        this.x = x || (Math.random()-0.5) * CONFIG.worldSize;
+        this.y = y || (Math.random()-0.5) * CONFIG.worldSize;
+        this.val = val;
+        this.size = val > 1 ? 6 + val : 4;
+        this.color = CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)];
+        this.dir = Math.random() * 6.28;
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        this.life = 1.0;
+        this.vx = (Math.random()-0.5) * 10;
+        this.vy = (Math.random()-0.5) * 10;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        this.life -= 0.05;
+    }
+}
+
+/* =========================================
+   RENDERER
+   ========================================= */
+const Renderer = {
+    draw: () => {
+        // Camera follow player
+        if(Game.player && !Game.player.dead) {
+            // Smooth lerp
+            Game.camera.x += (Game.player.x - Game.camera.x) * 0.1;
+            Game.camera.y += (Game.player.y - Game.camera.y) * 0.1;
+            
+            // Zoom calculation based on size
+            const targetZ = Math.max(0.5, 1 - (Game.player.width - 10)/100);
+            Game.camera.z += (targetZ - Game.camera.z) * 0.05;
+        }
+
+        const cx = canvas.width/2;
+        const cy = canvas.height/2;
+        const zoom = Game.camera.z;
+
+        // Clear Background
+        ctx.fillStyle = '#101215';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Grid (Parallax)
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-Game.camera.x, -Game.camera.y);
+
+        // Map Borders
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 10;
+        const sz = CONFIG.worldSize/2;
+        ctx.strokeRect(-sz, -sz, CONFIG.worldSize, CONFIG.worldSize);
+
+        // Grid Lines
+        ctx.strokeStyle = '#1e272e'; ctx.lineWidth = 2;
+        const gs = 100;
+        // Optimization: Only draw grid visible on screen
+        const startX = Math.floor((Game.camera.x - (cx/zoom)) / gs) * gs;
+        const endX = startX + (canvas.width/zoom) + gs*2;
+        const startY = Math.floor((Game.camera.y - (cy/zoom)) / gs) * gs;
+        const endY = startY + (canvas.height/zoom) + gs*2;
+
+        ctx.beginPath();
+        for(let x = startX; x < endX; x+=gs) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
+        for(let y = startY; y < endY; y+=gs) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+        ctx.stroke();
+
+        // Draw Food
+        for(let f of Game.foods) {
+            // Cull off-screen
+            if(Math.abs(f.x - Game.camera.x) > (cx/zoom + 50)) continue;
+            
+            ctx.fillStyle = f.color;
+            ctx.shadowColor = f.color; ctx.shadowBlur = 10; // Glow
+            ctx.beginPath(); 
+            ctx.arc(f.x, f.y, f.size, 0, Math.PI*2); 
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        // Draw Snakes (Sorted by length so small ones are under big ones)
+        // Actually, draw bot snakes then player on top usually better
+        const visibleSnakes = Game.snakes.filter(s => !s.dead);
+        
+        visibleSnakes.forEach(s => {
+            // Body
+            const step = Math.max(3, Math.floor(s.width/2.5)); // Draw density
+            
+            // Draw from tail to head
+            for(let i=s.path.length-1; i>=0; i-=step) {
+                const p = s.path[i];
+                ctx.fillStyle = s.color;
+                
+                // Simple shading: slightly lighter in center
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, s.width, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            // Head (Draw on top)
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(s.angle);
+
+            // Flag Skin logic?
+            if(s.skin && s.skin.type === 'flag') {
+                ctx.font = (s.width*2)+"px Arial";
+                ctx.textAlign="center"; ctx.textBaseline="middle";
+                ctx.fillText(s.skin.icon, 0, 0);
+            } else {
+                ctx.fillStyle = s.color;
+                ctx.shadowColor = s.color; ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(0, 0, s.width, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Eyes
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(s.width*0.4, -s.width*0.4, s.width*0.4, 0, Math.PI*2); // Right Eye
+                ctx.arc(s.width*0.4, s.width*0.4, s.width*0.4, 0, Math.PI*2); // Left Eye
+                ctx.fill();
+
+                // Pupils
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                ctx.arc(s.width*0.6, -s.width*0.4, s.width*0.2, 0, Math.PI*2); 
+                ctx.arc(s.width*0.6, s.width*0.4, s.width*0.2, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Name Tag
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(s.name, s.x, s.y - s.width - 10);
+        });
+
+        // Particles
+        for(let i=Game.particles.length-1; i>=0; i--) {
+            let p = Game.particles[i];
+            p.update();
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1;
+            if(p.life <= 0) Game.particles.splice(i, 1);
+        }
+
+        ctx.restore();
+    },
+
+    drawMinimap: () => {
+        // Clear minimap
+        mapCtx.clearRect(0,0, mapCanvas.width, mapCanvas.height);
+        
+        const scale = mapCanvas.width / CONFIG.worldSize;
+        const center = mapCanvas.width / 2;
+
+        // Player dot
+        if(Game.player && !Game.player.dead) {
+            mapCtx.fillStyle = "#fff";
+            mapCtx.beginPath();
+            mapCtx.arc(center + Game.player.x*scale, center + Game.player.y*scale, 3, 0, Math.PI*2);
+            mapCtx.fill();
+        }
+
+        // Enemy dots
+        mapCtx.fillStyle = "rgba(255,0,0,0.5)";
+        Game.snakes.forEach(s => {
+            if(s.isBot && !s.dead) {
+                mapCtx.beginPath();
+                mapCtx.fillRect(center + s.x*scale, center + s.y*scale, 2, 2);
+            }
+        });
+    }
+};
+
+/* =========================================
+   INPUT & UTILS
+   ========================================= */
+const Mouse = { x: 0, y: 0, boost: false };
+const Utils = {
+    dist: (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2)
+};
+
+window.onload = () => {
+    // Resize Handling
+    const resize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        mapCanvas.width = 150; mapCanvas.height = 150;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Mouse Input
+    window.addEventListener('mousemove', e => { Mouse.x = e.clientX; Mouse.y = e.clientY; });
+    window.addEventListener('mousedown', () => Mouse.boost = true);
+    window.addEventListener('mouseup', () => Mouse.boost = false);
+    
+    // Touch Input
+    const touchBtn = document.getElementById('mobile-controls');
+    if('ontouchstart' in window) touchBtn.style.display = 'flex';
+    
+    window.addEventListener('touchmove', e => {
+        e.preventDefault();
+        Mouse.x = e.touches[0].clientX;
+        Mouse.y = e.touches[0].clientY;
+    }, {passive:false});
+    
+    touchBtn.addEventListener('touchstart', (e) => { e.preventDefault(); Mouse.boost = true; });
+    touchBtn.addEventListener('touchend', (e) => { e.preventDefault(); Mouse.boost = false; });
+};
+</script>
+</body>
+</html>
+
